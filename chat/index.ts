@@ -7,5 +7,4 @@ export {
   selectActiveConversation,
 } from "./slice"
 export { chatListener } from "./listener"
-export { loadChatState } from "./storage"
-export type { ChatMessage, Conversation, PersistedChatState } from "./types"
+export type { ChatAttachment, ChatMessage, Conversation } from "./types"

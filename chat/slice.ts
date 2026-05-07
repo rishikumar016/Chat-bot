@@ -25,16 +25,12 @@ const slice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    createConversation(
-      state,
-      action: PayloadAction<{ id: string; documentId?: string | null }>,
-    ) {
-      const { id, documentId = null } = action.payload
+    createConversation(state, action: PayloadAction<{ id: string }>) {
+      const { id } = action.payload
       const now = Date.now()
       adapter.addOne(state, {
         id,
         title: "New conversation",
-        documentId,
         messages: [],
         createdAt: now,
         updatedAt: now,
@@ -43,18 +39,6 @@ const slice = createSlice({
     },
     setActiveConversation(state, action: PayloadAction<string | null>) {
       state.activeConversationId = action.payload
-    },
-    setDocumentId(
-      state,
-      action: PayloadAction<{ id: string; documentId: string | null }>,
-    ) {
-      adapter.updateOne(state, {
-        id: action.payload.id,
-        changes: {
-          documentId: action.payload.documentId,
-          updatedAt: Date.now(),
-        },
-      })
     },
     appendMessage(
       state,
@@ -69,7 +53,9 @@ const slice = createSlice({
         action.payload.message.role === "user" &&
         conv.title === "New conversation"
       ) {
-        conv.title = action.payload.message.content.slice(0, 40).trim() || "New conversation"
+        conv.title =
+          action.payload.message.content.slice(0, 40).trim() ||
+          "New conversation"
       }
     },
     setMessages(
@@ -84,7 +70,7 @@ const slice = createSlice({
     clearMessages(state, action: PayloadAction<string>) {
       adapter.updateOne(state, {
         id: action.payload,
-        changes: { messages: [], updatedAt: Date.now() },
+        changes: { messages: [], title: "New conversation", updatedAt: Date.now() },
       })
     },
     deleteConversation(state, action: PayloadAction<string>) {

@@ -1,11 +1,11 @@
 "use client"
 
 import { getPdfText } from "@/upload/storage"
-import type { UploadEntity } from "@/upload/slice"
+import type { ChatAttachment } from "./types"
 
-const MAX_DOC_CHARS = 80_000 // ~20–25K tokens — keeps room for chat history
+const MAX_DOC_CHARS = 80_000 // ~20–25K tokens — leaves room for chat history
 
-export interface DocumentContext {
+export interface AttachmentPayload {
   id: string
   title: string
   pageCount: number
@@ -14,17 +14,15 @@ export interface DocumentContext {
 }
 
 /**
- * Loads page text from IndexedDB and assembles the system-context payload
- * for a document. Truncates to a fixed character budget; flags `truncated`
- * so the prompt can mention it. Returns null if no upload is found or the
- * doc has no extracted text.
+ * Loads page text from IndexedDB and assembles the request payload for
+ * a document attachment. Concatenates with [Page N] markers and truncates
+ * to a fixed character budget; flags `truncated` so the prompt can mention
+ * it. Returns null if no text was extracted (corrupted / image-only PDF).
  */
-export async function buildDocumentContext(
-  upload: UploadEntity | undefined,
-): Promise<DocumentContext | null> {
-  if (!upload || !upload.metadata) return null
-
-  const pages = await getPdfText(upload.id).catch(() => undefined)
+export async function loadAttachmentPayload(
+  meta: ChatAttachment,
+): Promise<AttachmentPayload | null> {
+  const pages = await getPdfText(meta.id).catch(() => undefined)
   if (!pages || pages.length === 0) return null
 
   let text = ""
@@ -41,9 +39,9 @@ export async function buildDocumentContext(
   }
 
   return {
-    id: upload.id,
-    title: upload.metadata.title || upload.name,
-    pageCount: upload.metadata.pageCount,
+    id: meta.id,
+    title: meta.title,
+    pageCount: meta.pageCount,
     text,
     truncated,
   }

@@ -6,6 +6,7 @@ import { LayoutDashboard, FileText } from "lucide-react"
 
 import type { User } from "@/types/auth-types"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { ConversationsList } from "@/chat/components/conversations-list"
 import {
   Sidebar,
   SidebarContent,
@@ -46,15 +47,17 @@ export function AppSidebar({ user }: { user: User }) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent >
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent >
+          <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
                 const isActive =
-                  pathname === item.href ||
-                  pathname.startsWith(`${item.href}/`)
+                  item.href === "/dashboard"
+                    ? pathname === "/dashboard"
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`)
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -73,6 +76,8 @@ export function AppSidebar({ user }: { user: User }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <ConversationsList />
       </SidebarContent>
 
       <SidebarFooter>
