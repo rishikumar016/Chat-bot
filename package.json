@@ -12,9 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.62",
+    "@ai-sdk/react": "^3.0.177",
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.11.2",
     "@tanstack/react-virtual": "^3.13.24",
+    "ai": "^6.0.175",
     "axios": "^1.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

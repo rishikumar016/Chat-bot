@@ -10,9 +10,7 @@ export default function DashboardPage() {
       <p className="text-muted-foreground">
         You are authenticated. Upload a document to get started.
       </p>
-      <Button asChild className="w-fit">
-        <Link href="/documents">Go to documents</Link>
-      </Button>
+    Dashboard content goes here.
     </div>
   )
 }
