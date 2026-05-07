@@ -1,5 +1,5 @@
 import { createListenerMiddleware } from "@reduxjs/toolkit"
-import { reset as authReset } from "@/lib/store/auth-slice"
+import { logout as authLogout } from "@/lib/store/auth-slice"
 import {
   resetUploadsHydratedFlag,
   uploadsActions,
@@ -46,10 +46,13 @@ uploadsListener.startListening({
   },
 })
 
-// On logout: clear in-memory state, wipe IDB, reset the hydrate guard
-// so the next user on this device starts fresh.
+// On EXPLICIT logout only: clear in-memory state, wipe IDB, reset the
+// hydrate guard so the next user on this device starts fresh.
+// We intentionally don't react to `reset` here — that action also fires
+// when the silent token refresh fails on bootstrap, which would wipe
+// uploads on every transient auth blip / page refresh.
 uploadsListener.startListening({
-  actionCreator: authReset,
+  actionCreator: authLogout,
   effect: async (_action, api) => {
     api.dispatch(uploadsActions.clearAll())
     resetUploadsHydratedFlag()

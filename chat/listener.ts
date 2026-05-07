@@ -1,5 +1,5 @@
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit"
-import { reset as authReset } from "@/lib/store/auth-slice"
+import { logout as authLogout } from "@/lib/store/auth-slice"
 import { chatActions } from "./slice"
 import type { Conversation } from "./types"
 import {
@@ -19,7 +19,10 @@ interface MinimalState {
 
 export const chatListener = createListenerMiddleware()
 
-async function persistConversation(api: { getState: () => unknown }, id: string) {
+async function persistConversation(
+  api: { getState: () => unknown },
+  id: string
+) {
   const state = api.getState() as MinimalState
   const conv = state.chat.entities[id]
   if (!conv) return
@@ -36,7 +39,7 @@ chatListener.startListening({
   matcher: isAnyOf(
     chatActions.createConversation,
     chatActions.appendMessage,
-    chatActions.setMessages,
+    chatActions.setMessages
   ),
   effect: async (action, api) => {
     const payload = action.payload as
@@ -59,7 +62,7 @@ chatListener.startListening({
 chatListener.startListening({
   matcher: isAnyOf(
     chatActions.createConversation,
-    chatActions.setActiveConversation,
+    chatActions.setActiveConversation
   ),
   effect: async (_action, api) => {
     const state = api.getState() as MinimalState
@@ -79,9 +82,12 @@ chatListener.startListening({
   },
 })
 
-// On logout: drop everything in state + IDB.
+// On EXPLICIT logout only: drop everything in state + IDB.
+// Note: we intentionally don't react to `reset` here — that action also
+// fires when a silent token refresh fails on bootstrap, which would
+// wipe the user's conversations on every transient auth blip.
 chatListener.startListening({
-  actionCreator: authReset,
+  actionCreator: authLogout,
   effect: async (_action, api) => {
     api.dispatch(chatActions.clearAll())
     await clearAllChatData()

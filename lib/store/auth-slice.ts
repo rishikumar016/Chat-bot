@@ -31,8 +31,18 @@ const authSlice = createSlice({
       state.user = null
       state.isHydrated = true
     },
+    // Same state effect as `reset`, but semantically distinct: this fires
+    // ONLY on explicit user logout. Persistent-data listeners (chat,
+    // uploads) key off this — never `reset` — so a transient refresh-token
+    // failure on page load doesn't nuke local IndexedDB history.
+    logout(state) {
+      state.accessToken = null
+      state.user = null
+      state.isHydrated = true
+    },
   },
 })
 
-export const { setAccessToken, setUser, setHydrated, reset } = authSlice.actions
+export const { setAccessToken, setUser, setHydrated, reset, logout } =
+  authSlice.actions
 export default authSlice.reducer

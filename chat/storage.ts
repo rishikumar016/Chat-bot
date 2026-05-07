@@ -8,8 +8,17 @@ import type { Conversation } from "./types"
 //   • We can write *one* conversation at a time instead of stringifying
 //     the whole array on every keystroke-completion
 //   • Reads are async and don't block the main thread
+//
+// IMPORTANT: each store gets its OWN database name. `idb-keyval`'s
+// `createStore` opens the DB at the default version and only creates the
+// requested store inside `onupgradeneeded`. Putting two stores under the
+// same `dbName` means the second `createStore` call opens the existing
+// DB at the same version, no upgrade fires, and the second object store
+// is never created — every read/write to it then throws NotFoundError.
+// Splitting DBs avoids that footgun and matches the upload/storage.ts
+// pattern.
 const conversationsStore = createStore("pdf-chat", "conversations")
-const metaStore = createStore("pdf-chat", "meta")
+const metaStore = createStore("pdf-chat-meta", "items")
 
 const ACTIVE_ID_KEY = "active"
 
@@ -34,9 +43,7 @@ export function putActiveId(id: string | null): Promise<void> {
 }
 
 export function getActiveId(): Promise<string | null> {
-  return get<string | null>(ACTIVE_ID_KEY, metaStore).then(
-    (v) => v ?? null,
-  )
+  return get<string | null>(ACTIVE_ID_KEY, metaStore).then((v) => v ?? null)
 }
 
 export async function clearAllChatData(): Promise<void> {

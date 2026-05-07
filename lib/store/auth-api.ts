@@ -1,7 +1,7 @@
 import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react"
 import type { AxiosError, AxiosRequestConfig } from "axios"
 import { apiClient } from "@/lib/api-client"
-import { reset, setAccessToken, setUser } from "./auth-slice"
+import { logout, setAccessToken, setUser } from "./auth-slice"
 import type { User } from "@/types/auth-types"
 
 interface AxiosBaseQueryArgs {
@@ -75,7 +75,7 @@ export const authApi = createApi({
         } catch {
           // logout should clear local state regardless of server outcome
         }
-        dispatch(reset())
+        dispatch(logout())
         dispatch(authApi.util.resetApiState())
       },
     }),

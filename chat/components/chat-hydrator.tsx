@@ -3,11 +3,7 @@
 import { useEffect } from "react"
 import { useAppDispatch } from "@/lib/store/hooks"
 import { chatActions } from "../slice"
-import {
-  delConversation,
-  getActiveId,
-  getAllConversations,
-} from "../storage"
+import { delConversation, getActiveId, getAllConversations } from "../storage"
 import type { Conversation } from "../types"
 
 let hasHydrated = false
@@ -27,7 +23,12 @@ export function ChatHydrator() {
   useEffect(() => {
     if (hasHydrated) return
     hasHydrated = true
-    Promise.all([getAllConversations(), getActiveId()])
+    // Read each store independently — if one rejects (e.g. a NotFoundError
+    // from a stale DB version), don't drop the other's data on the floor.
+    Promise.all([
+      getAllConversations().catch(() => [] as Conversation[]),
+      getActiveId().catch(() => null),
+    ])
       .then(async ([conversations, activeId]) => {
         const { kept, removed } = dedupeEmpties(conversations)
 
@@ -35,7 +36,7 @@ export function ChatHydrator() {
         // doesn't see them again.
         if (removed.length > 0) {
           await Promise.all(
-            removed.map((id) => delConversation(id).catch(() => {})),
+            removed.map((id) => delConversation(id).catch(() => {}))
           )
         }
 
@@ -49,7 +50,7 @@ export function ChatHydrator() {
           chatActions.hydrate({
             conversations: kept,
             activeConversationId: validActiveId,
-          }),
+          })
         )
       })
       .catch(() => {
