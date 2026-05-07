@@ -12,9 +12,11 @@ import type {
 } from "@/lib/pdf/types"
 import {
   delPdfBlob,
+  delPdfText,
   delUploadMeta,
   getAllUploadMeta,
   putPdfBlob,
+  putPdfText,
 } from "./storage"
 import { parsePdfBuffer } from "./worker/parser-client"
 
@@ -133,7 +135,13 @@ export const startUpload = createAsyncThunk<void, File>(
     }
 
     try {
-      const metadata = await parsePdfBuffer(buffer)
+      const { metadata, pages } = await parsePdfBuffer(buffer)
+      // Persist extracted text to its own IDB store so the chat can use
+      // it for RAG. Kept out of Redux state — pages can be MB-scale and
+      // would inflate every reducer update.
+      await putPdfText(id, pages).catch(() => {
+        // Non-fatal — chat will fall back to no doc context if missing.
+      })
       dispatch(uploadsActions.setMetadata({ id, metadata }))
     } catch (err: unknown) {
       const parseErr = err as Partial<ParseError>
@@ -144,14 +152,17 @@ export const startUpload = createAsyncThunk<void, File>(
           (err instanceof Error ? err.message : "Failed to parse PDF"),
       }
       dispatch(uploadsActions.setError({ id, error }))
-      await delPdfBlob(id).catch(() => {})
+      await Promise.all([
+        delPdfBlob(id).catch(() => {}),
+        delPdfText(id).catch(() => {}),
+      ])
     }
   },
 )
 
 /**
- * Removes the entry from state and both the blob and the persisted meta
- * from IndexedDB.
+ * Removes the entry from state and the blob, persisted meta, and the
+ * extracted page text from IndexedDB.
  */
 export const removeUploadAndBlob = createAsyncThunk<void, string>(
   "uploads/remove",
@@ -160,6 +171,7 @@ export const removeUploadAndBlob = createAsyncThunk<void, string>(
     await Promise.all([
       delPdfBlob(id).catch(() => {}),
       delUploadMeta(id).catch(() => {}),
+      delPdfText(id).catch(() => {}),
     ])
   },
 )

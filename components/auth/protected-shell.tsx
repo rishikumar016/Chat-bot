@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { UploadsHydrator } from "@/upload/components/uploads-hydrator"
+import { ChatHydrator } from "@/chat/components/chat-hydrator"
 
 // Dynamic auth-gated subtree. Sits behind a <Suspense> in the parent server
 // layout so PPR can prerender a static shell — RTK Query's internal
@@ -42,6 +43,7 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
     <TooltipProvider>
       <SidebarProvider>
         <UploadsHydrator />
+        <ChatHydrator />
         <AppSidebar user={user} />
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">

@@ -22,7 +22,7 @@ export function SignUpForm() {
   const [register, { isLoading, isSuccess, error }] = useRegisterMutation()
 
   const form = useForm<SignUpValues>({
-    resolver: zodResolver(signUpSchema),
+    resolver: zodResolver(signUpSchema as any),
     defaultValues: {
       firstName: "",
       lastName: "",

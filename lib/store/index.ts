@@ -5,6 +5,8 @@ import viewerReducer from "./viewer-slice"
 import { authApi } from "./auth-api"
 import uploadsReducer from "@/upload/slice"
 import { uploadsListener } from "@/upload/listener"
+import { chatReducer } from "@/chat"
+import { chatListener } from "@/chat/listener"
 import { injectStore } from "./store-ref"
 
 export const store = configureStore({
@@ -12,11 +14,12 @@ export const store = configureStore({
     auth: authReducer,
     uploads: uploadsReducer,
     viewer: viewerReducer,
+    chat: chatReducer,
     [authApi.reducerPath]: authApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
-      .prepend(uploadsListener.middleware)
+      .prepend(uploadsListener.middleware, chatListener.middleware)
       .concat(authApi.middleware),
 })
 

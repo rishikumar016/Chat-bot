@@ -11,7 +11,13 @@
 // (during PPR prerender), so a static import of pdfjs would crash the
 // build.
 
-import type { ParseError, ParseErrorCode, PdfMetadata } from "@/lib/pdf/types"
+import type {
+  ParseError,
+  ParseErrorCode,
+  ParsedPdf,
+  PdfMetadata,
+  PdfPageText,
+} from "@/lib/pdf/types"
 
 const SAMPLE_PAGE_LIMIT = 5
 
@@ -32,11 +38,35 @@ function classify(err: unknown): ParseError {
   return { code, message }
 }
 
+interface PdfjsTextItem {
+  str?: string
+  hasEOL?: boolean
+}
+
+function joinTextItems(items: PdfjsTextItem[]): string {
+  let out = ""
+  for (const item of items) {
+    if (typeof item.str === "string") {
+      out += item.str
+    }
+    if (item.hasEOL) {
+      out += "\n"
+    } else {
+      out += " "
+    }
+  }
+  return out.replace(/[ \t]+/g, " ").replace(/\n /g, "\n").trim()
+}
+
 /**
- * Parses metadata from a PDF buffer using pdfjs's worker.
+ * Parses metadata AND extracts text from a PDF buffer in a single
+ * pdfjs document load. Text extraction is needed for the chat's
+ * basic-RAG flow. Heavy parsing runs in pdfjs's worker; we coordinate
+ * on the main thread.
+ *
  * Throws a `ParseError` (typed code + message) on failure.
  */
-export async function parsePdfBuffer(buffer: ArrayBuffer): Promise<PdfMetadata> {
+export async function parsePdfBuffer(buffer: ArrayBuffer): Promise<ParsedPdf> {
   if (typeof window === "undefined") {
     throw {
       code: "io" as ParseErrorCode,
@@ -62,18 +92,30 @@ export async function parsePdfBuffer(buffer: ArrayBuffer): Promise<PdfMetadata> 
 
     const sampleLimit = Math.min(pageCount, SAMPLE_PAGE_LIMIT)
     const pageDims: PdfMetadata["pageDims"] = []
-    for (let i = 1; i <= sampleLimit; i++) {
+    const pages: PdfPageText[] = []
+
+    for (let i = 1; i <= pageCount; i++) {
       const page = await doc.getPage(i)
-      const vp = page.getViewport({ scale: 1 })
-      pageDims.push({ width: vp.width, height: vp.height })
+      if (i <= sampleLimit) {
+        const vp = page.getViewport({ scale: 1 })
+        pageDims.push({ width: vp.width, height: vp.height })
+      }
+      const textContent = await page.getTextContent()
+      pages.push({
+        pageNumber: i,
+        text: joinTextItems(textContent.items as PdfjsTextItem[]),
+      })
       page.cleanup()
     }
 
     return {
-      pageCount,
-      title: info.Title,
-      author: info.Author,
-      pageDims,
+      metadata: {
+        pageCount,
+        title: info.Title,
+        author: info.Author,
+        pageDims,
+      },
+      pages,
     }
   } catch (err) {
     throw classify(err)

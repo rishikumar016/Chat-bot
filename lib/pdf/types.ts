@@ -19,6 +19,16 @@ export interface PdfMetadata {
   pageDims: PdfPageDim[]
 }
 
+export interface PdfPageText {
+  pageNumber: number
+  text: string
+}
+
+export interface ParsedPdf {
+  metadata: PdfMetadata
+  pages: PdfPageText[]
+}
+
 export interface ParseError {
   code: ParseErrorCode
   message: string
