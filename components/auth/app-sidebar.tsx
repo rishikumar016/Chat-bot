@@ -22,7 +22,7 @@ import {
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Documents", href: "/documents", icon: FileText },
+  { title: "Documents", href: "/dashboard/documents", icon: FileText },
 ] as const
 
 export function AppSidebar({ user }: { user: User }) {
@@ -46,10 +46,10 @@ export function AppSidebar({ user }: { user: User }) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent >
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent >
             <SidebarMenu>
               {navItems.map((item) => {
                 const isActive =

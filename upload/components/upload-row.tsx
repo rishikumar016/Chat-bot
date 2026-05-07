@@ -65,7 +65,7 @@ export const UploadRow = memo(function UploadRow({ id }: Props) {
         )}
         {isReady && (
           <Button asChild size="sm">
-            <Link href={`/documents/${upload.id}`}>Open</Link>
+            <Link href={`/dashboard/documents/${upload.id}`}>Open</Link>
           </Button>
         )}
         <Button
