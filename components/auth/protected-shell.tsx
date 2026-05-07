@@ -1,12 +1,17 @@
 "use client"
 
 import { useEffect } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAppSelector } from "@/lib/store/hooks"
 import { useGetUserQuery } from "@/lib/store/auth-api"
-import { LogoutButton } from "@/components/auth/logout-button"
+import { AppSidebar } from "@/components/auth/app-sidebar"
 import { NavSkeleton } from "@/components/auth/nav-skeleton"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { UploadsHydrator } from "@/upload/components/uploads-hydrator"
 
 // Dynamic auth-gated subtree. Sits behind a <Suspense> in the parent server
@@ -34,15 +39,17 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
   if (!user) return null
 
   return (
-    <div className="flex min-h-svh flex-col">
-      <UploadsHydrator />
-      <header className="flex h-14 items-center justify-between border-b px-6">
-        <Link href="/documents" className="text-sm font-medium">
-          {user.firstName} {user.lastName}
-        </Link>
-        <LogoutButton />
-      </header>
-      <main className="flex min-h-0 flex-1 flex-col">{children}</main>
-    </div>
+    <TooltipProvider>
+      <SidebarProvider>
+        <UploadsHydrator />
+        <AppSidebar user={user} />
+        <SidebarInset>
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger />
+          </header>
+          <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   )
 }
