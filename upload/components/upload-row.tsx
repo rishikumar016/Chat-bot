@@ -16,7 +16,7 @@ function formatSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
 }
 
-function statusLabel(code: string): string {
+function statusLabel(code: string, message?: string): string {
   switch (code) {
     case "password":
       return "Password-protected — not supported"
@@ -25,9 +25,9 @@ function statusLabel(code: string): string {
     case "quota":
       return "Storage quota exceeded"
     case "io":
-      return "Could not read the file"
+      return message || "Could not read the file"
     default:
-      return "Failed to process"
+      return message ? `Failed to process: ${message}` : "Failed to process"
   }
 }
 
@@ -55,7 +55,7 @@ export const UploadRow = memo(function UploadRow({ id }: Props) {
         </div>
         {isError && upload.error && (
           <div className="text-xs text-destructive">
-            {statusLabel(upload.error.code)}
+            {statusLabel(upload.error.code, upload.error.message)}
           </div>
         )}
       </div>

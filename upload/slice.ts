@@ -10,8 +10,13 @@ import type {
   PdfMetadata,
   UploadStatus,
 } from "@/lib/pdf/types"
-import { delPdfBlob, putPdfBlob } from "./storage"
-import { parsePdf } from "./worker/parser-client"
+import {
+  delPdfBlob,
+  delUploadMeta,
+  getAllUploadMeta,
+  putPdfBlob,
+} from "./storage"
+import { parsePdfBuffer } from "./worker/parser-client"
 
 export interface UploadEntity {
   id: string
@@ -62,6 +67,9 @@ const slice = createSlice({
         changes: { error: action.payload.error, status: "error" },
       })
     },
+    hydrateMany(state, action: PayloadAction<UploadEntity[]>) {
+      adapter.upsertMany(state, action.payload)
+    },
     removeUpload: adapter.removeOne,
     clearAll: adapter.removeAll,
   },
@@ -80,8 +88,9 @@ export const selectUploadCount = selectors.selectTotal
 
 /**
  * Adds a file to the upload list, persists the blob to IndexedDB, and
- * kicks the parser worker — all in parallel. Each step updates the
- * single entity (entity adapter + selectById = no global invalidation).
+ * parses metadata via pdfjs (which runs the heavy work in its own
+ * Web Worker). Each step updates a single entity (entity adapter +
+ * selectById = no global invalidation).
  */
 export const startUpload = createAsyncThunk<void, File>(
   "uploads/start",
@@ -101,11 +110,30 @@ export const startUpload = createAsyncThunk<void, File>(
       }),
     )
 
+    let buffer: ArrayBuffer
     try {
-      const [, metadata] = await Promise.all([
-        putPdfBlob(id, file),
-        parsePdf(id, file),
-      ])
+      buffer = await file.arrayBuffer()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to read file"
+      dispatch(uploadsActions.setError({ id, error: { code: "io", message } }))
+      return
+    }
+
+    try {
+      await putPdfBlob(
+        id,
+        new Blob([buffer], { type: file.type || "application/pdf" }),
+      )
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not write to local storage"
+      const code = /quota/i.test(message) ? "quota" : "io"
+      dispatch(uploadsActions.setError({ id, error: { code, message } }))
+      return
+    }
+
+    try {
+      const metadata = await parsePdfBuffer(buffer)
       dispatch(uploadsActions.setMetadata({ id, metadata }))
     } catch (err: unknown) {
       const parseErr = err as Partial<ParseError>
@@ -113,7 +141,7 @@ export const startUpload = createAsyncThunk<void, File>(
         code: parseErr?.code ?? "unknown",
         message:
           parseErr?.message ??
-          (err instanceof Error ? err.message : "Failed to upload"),
+          (err instanceof Error ? err.message : "Failed to parse PDF"),
       }
       dispatch(uploadsActions.setError({ id, error }))
       await delPdfBlob(id).catch(() => {})
@@ -122,12 +150,52 @@ export const startUpload = createAsyncThunk<void, File>(
 )
 
 /**
- * Removes the entry from state and the blob from IndexedDB.
+ * Removes the entry from state and both the blob and the persisted meta
+ * from IndexedDB.
  */
 export const removeUploadAndBlob = createAsyncThunk<void, string>(
   "uploads/remove",
   async (id, { dispatch }) => {
     dispatch(uploadsActions.removeUpload(id))
-    await delPdfBlob(id).catch(() => {})
+    await Promise.all([
+      delPdfBlob(id).catch(() => {}),
+      delUploadMeta(id).catch(() => {}),
+    ])
+  },
+)
+
+// Module-scoped guard. We only want to read IDB once per session — multiple
+// route mounts of the hydrator must not double-dispatch or race.
+let hasHydrated = false
+
+export function resetUploadsHydratedFlag() {
+  hasHydrated = false
+}
+
+/**
+ * Reads persisted upload metadata from IndexedDB and seeds the slice.
+ * Idempotent — safe to call from any client component on mount.
+ */
+export const hydrateUploads = createAsyncThunk<void, void>(
+  "uploads/hydrate",
+  async (_, { dispatch }) => {
+    if (hasHydrated) return
+    hasHydrated = true
+    try {
+      const records = await getAllUploadMeta()
+      if (records.length === 0) return
+      const entities: UploadEntity[] = records.map((r) => ({
+        id: r.id,
+        name: r.name,
+        size: r.size,
+        status: "ready",
+        metadata: r.metadata,
+        createdAt: r.createdAt,
+      }))
+      dispatch(uploadsActions.hydrateMany(entities))
+    } catch {
+      // Allow a future retry if the read failed.
+      hasHydrated = false
+    }
   },
 )
