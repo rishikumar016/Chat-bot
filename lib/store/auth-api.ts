@@ -2,7 +2,7 @@ import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react"
 import type { AxiosError, AxiosRequestConfig } from "axios"
 import { apiClient } from "@/lib/api-client"
 import { reset, setAccessToken, setUser } from "./auth-slice"
-import type { User } from "@/lib/auth/types"
+import type { User } from "@/types/auth-types"
 
 interface AxiosBaseQueryArgs {
   url: string
