@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from "axios"
-import { useAuthStore } from "@/stores/auth-store"
+import { getStore } from "@/lib/store/store-ref"
+import { reset, setAccessToken } from "@/lib/store/auth-slice"
 
 export const apiClient = axios.create({
   baseURL: "/api",
@@ -8,7 +9,7 @@ export const apiClient = axios.create({
 
 // ── Request interceptor: attach access token ──────────────────────────
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
+  const token = getStore()?.getState().auth.accessToken
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -27,11 +28,11 @@ export function getNewToken(): Promise<string> {
     })
     .then((res) => {
       const newToken = res.data.accessToken
-      useAuthStore.getState().setAccessToken(newToken)
+      getStore()?.dispatch(setAccessToken(newToken))
       return newToken
     })
     .catch((err) => {
-      useAuthStore.getState().reset()
+      getStore()?.dispatch(reset())
       throw err
     })
     .finally(() => {

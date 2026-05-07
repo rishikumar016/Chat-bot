@@ -1,19 +1,30 @@
 "use client"
 
-import { useLogout } from "@/lib/auth/hooks"
+import { useRouter } from "next/navigation"
+import { useLogoutMutation } from "@/lib/store/auth-api"
 import { Button } from "@/components/ui/button"
 
 export function LogoutButton() {
-  const { mutate, isPending } = useLogout()
+  const router = useRouter()
+  const [logout, { isLoading }] = useLogoutMutation()
+
+  async function handleLogout() {
+    try {
+      await logout().unwrap()
+    } catch {
+      // local state is reset regardless via onQueryStarted
+    }
+    router.push("/sign-in")
+  }
 
   return (
     <Button
       variant="outline"
       size="sm"
-      disabled={isPending}
-      onClick={() => mutate()}
+      disabled={isLoading}
+      onClick={handleLogout}
     >
-      {isPending ? "Signing out..." : "Sign out"}
+      {isLoading ? "Signing out..." : "Sign out"}
     </Button>
   )
 }

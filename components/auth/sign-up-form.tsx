@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useRegister } from "@/lib/auth/hooks"
+import { useRegisterMutation } from "@/lib/store/auth-api"
 import { Button } from "@/components/ui/button"
 
 export function SignUpForm() {
@@ -13,20 +13,32 @@ export function SignUpForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const { mutate, isPending, isSuccess, error } = useRegister()
+  const [register, { isLoading, isSuccess, error }] = useRegisterMutation()
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    mutate(
-      { firstName, lastName, email, password },
-      { onSuccess: () => setTimeout(() => router.push("/sign-in"), 800) },
-    )
+    try {
+      await register({ firstName, lastName, email, password }).unwrap()
+       router.push("/sign-in")
+    } catch {
+      // error is already exposed via the `error` field
+    }
   }
 
-  const errorMessage =
-    (error as { response?: { data?: { message?: string } } })?.response?.data
-      ?.message ??
-    (error instanceof Error ? error.message : null)
+  const errorMessage = (() => {
+    if (!error) return null
+    if (
+      typeof error === "object" &&
+      "data" in error &&
+      error.data &&
+      typeof error.data === "object" &&
+      "message" in (error.data as Record<string, unknown>)
+    ) {
+      return (error.data as { message: string }).message
+    }
+    if (error instanceof Error) return error.message
+    return "Registration failed"
+  })()
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
@@ -112,8 +124,8 @@ export function SignUpForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Creating account..." : "Create account"}
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Creating account..." : "Create account"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

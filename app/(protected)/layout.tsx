@@ -2,8 +2,8 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/stores/auth-store"
-import { useUser } from "@/lib/auth/hooks"
+import { useAppSelector } from "@/lib/store/hooks"
+import { useGetUserQuery } from "@/lib/store/auth-api"
 import { LogoutButton } from "@/components/auth/logout-button"
 
 function NavSkeleton() {
@@ -21,10 +21,12 @@ export default function ProtectedLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const isHydrated = useAuthStore((s) => s.isHydrated)
-  const accessToken = useAuthStore((s) => s.accessToken)
+  const isHydrated = useAppSelector((s) => s.auth.isHydrated)
+  const accessToken = useAppSelector((s) => s.auth.accessToken)
 
-  const { data: user, isLoading } = useUser()
+  const { data: user, isLoading } = useGetUserQuery(undefined, {
+    skip: !accessToken,
+  })
 
   useEffect(() => {
     if (isHydrated && !accessToken) {

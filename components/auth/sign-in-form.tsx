@@ -1,25 +1,42 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useLogin } from "@/lib/auth/hooks"
+import { useLoginMutation } from "@/lib/store/auth-api"
 import { Button } from "@/components/ui/button"
 
 export function SignInForm() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const { mutate, isPending, error } = useLogin()
+  const [login, { isLoading, error }] = useLoginMutation()
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    mutate({ email, password })
+    try {
+      await login({ email, password }).unwrap()
+      router.push("/dashboard")
+    } catch {
+      // error is already exposed via the `error` field
+    }
   }
 
-  const errorMessage =
-    (error as { response?: { data?: { message?: string } } })?.response?.data
-      ?.message ??
-    (error instanceof Error ? error.message : null)
+  const errorMessage = (() => {
+    if (!error) return null
+    if (
+      typeof error === "object" &&
+      "data" in error &&
+      error.data &&
+      typeof error.data === "object" &&
+      "message" in (error.data as Record<string, unknown>)
+    ) {
+      return (error.data as { message: string }).message
+    }
+    if (error instanceof Error) return error.message
+    return "Sign in failed"
+  })()
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4">
@@ -63,8 +80,8 @@ export function SignInForm() {
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Signing in..." : "Sign in"}
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? "Signing in..." : "Sign in"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
