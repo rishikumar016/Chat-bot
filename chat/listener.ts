@@ -57,8 +57,6 @@ chatListener.startListening({
   },
 })
 
-// Active conversation id lives in its own meta record so changing the
-// pointer doesn't rewrite any conversation.
 chatListener.startListening({
   matcher: isAnyOf(
     chatActions.createConversation,
@@ -82,10 +80,6 @@ chatListener.startListening({
   },
 })
 
-// On EXPLICIT logout only: drop everything in state + IDB.
-// Note: we intentionally don't react to `reset` here — that action also
-// fires when a silent token refresh fails on bootstrap, which would
-// wipe the user's conversations on every transient auth blip.
 chatListener.startListening({
   actionCreator: authLogout,
   effect: async (_action, api) => {

@@ -23,8 +23,7 @@ export function ChatHydrator() {
   useEffect(() => {
     if (hasHydrated) return
     hasHydrated = true
-    // Read each store independently — if one rejects (e.g. a NotFoundError
-    // from a stale DB version), don't drop the other's data on the floor.
+
     Promise.all([
       getAllConversations().catch(() => [] as Conversation[]),
       getActiveId().catch(() => null),
@@ -32,15 +31,12 @@ export function ChatHydrator() {
       .then(async ([conversations, activeId]) => {
         const { kept, removed } = dedupeEmpties(conversations)
 
-        // Drop the de-duped empties from IDB too, so the next reload
-        // doesn't see them again.
         if (removed.length > 0) {
           await Promise.all(
             removed.map((id) => delConversation(id).catch(() => {}))
           )
         }
 
-        // Validate active id — if it pointed to a removed empty, clear it.
         const validActiveId =
           activeId && kept.some((c) => c.id === activeId) ? activeId : null
 

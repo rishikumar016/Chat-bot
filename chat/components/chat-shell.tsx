@@ -8,7 +8,6 @@ import {
   selectAllConversations,
 } from "../slice"
 import { ConversationView } from "./conversation-view"
-import { ConversationScrollButton } from "@/components/ai-elements/conversation"
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -26,9 +25,6 @@ export function ChatShell() {
   const dispatch = useAppDispatch()
   const activeId = useAppSelector(selectActiveConversationId)
   const conversations = useAppSelector(selectAllConversations)
-
-  // Strict-mode guard: in dev React mounts effects twice. Without this we
-  // create two empty "New conversation" rows on every fresh visit.
   const hasEnsuredRef = useRef(false)
 
   useEffect(() => {
@@ -36,9 +32,6 @@ export function ChatShell() {
     if (hasEnsuredRef.current) return
     hasEnsuredRef.current = true
 
-    // Reuse an existing empty conversation if one is lying around (from a
-    // prior visit or a "+ New chat" click that was never used). Avoids
-    // piling up "New conversation" rows.
     const empty = conversations.find((c) => c.messages.length === 0)
     if (empty) {
       dispatch(chatActions.setActiveConversation(empty.id))

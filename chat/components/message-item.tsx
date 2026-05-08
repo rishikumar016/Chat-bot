@@ -18,13 +18,12 @@ interface Props {
 }
 
 function MessageItemImpl({ role, text, isStreaming, attachment }: Props) {
-  // `system` is shown as assistant-style; we don't expect them in this app.
   const from = role === "user" ? "user" : "assistant"
 
   return (
-    // content-visibility: auto lets the browser skip painting offscreen
-    // messages — meaningful for 500+ message conversations.
-    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 80px" }}>
+    <div
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 80px" }}
+    >
       <Message from={from}>
         <MessageContent>
           {attachment && from === "user" && (

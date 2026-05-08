@@ -1,16 +1,5 @@
 "use client"
 
-// pdfjs already runs all heavy parsing inside its own Web Worker
-// (pdf.worker.mjs, configured in @/lib/pdf/pdfjs-config). This client
-// sits on the main thread, hands the buffer to pdfjs, and the worker
-// does the work — so the main thread stays unblocked.
-//
-// Importantly: pdfjs is *lazy-imported* here. It accesses DOMMatrix at
-// module top level, which doesn't exist on the Node server. The slice
-// that imports this file is loaded by the Redux store on the server too
-// (during PPR prerender), so a static import of pdfjs would crash the
-// build.
-
 import type {
   ParseError,
   ParseErrorCode,
@@ -55,7 +44,10 @@ function joinTextItems(items: PdfjsTextItem[]): string {
       out += " "
     }
   }
-  return out.replace(/[ \t]+/g, " ").replace(/\n /g, "\n").trim()
+  return out
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n /g, "\n")
+    .trim()
 }
 
 /**
