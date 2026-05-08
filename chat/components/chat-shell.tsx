@@ -8,6 +8,7 @@ import {
   selectAllConversations,
 } from "../slice"
 import { ConversationView } from "./conversation-view"
+import { ConversationScrollButton } from "@/components/ai-elements/conversation"
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto

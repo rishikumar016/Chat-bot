@@ -45,11 +45,13 @@ export function ProtectedShell({ children }: { children: React.ReactNode }) {
         <UploadsHydrator />
         <ChatHydrator />
         <AppSidebar user={user} />
-        <SidebarInset>
+        <SidebarInset className="h-dvh overflow-hidden">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger />
           </header>
-          <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+          <main className="flex flex-1 flex-col overflow-hidden">
+            {children}
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
