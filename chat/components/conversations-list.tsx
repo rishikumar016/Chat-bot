@@ -52,7 +52,7 @@ export function ConversationsList() {
     <SidebarGroup>
       <SidebarGroupLabel>Conversations</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-2">
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleNewChat}
@@ -107,7 +107,7 @@ const ConversationRow = memo(function ConversationRow({
       e.stopPropagation()
       dispatch(chatActions.deleteConversation(conversation.id))
     },
-    [conversation.id, dispatch],
+    [conversation.id, dispatch]
   )
 
   return (

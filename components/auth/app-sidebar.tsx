@@ -32,8 +32,8 @@ export function AppSidebar({ user }: { user: User }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-semibold">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
             {user.firstName.charAt(0).toUpperCase()}
           </div>
           <div className="grid min-w-0 flex-1 leading-tight group-data-[collapsible=icon]:hidden">
@@ -51,7 +51,7 @@ export function AppSidebar({ user }: { user: User }) {
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {navItems.map((item) => {
                 const isActive =
                   item.href === "/dashboard"
